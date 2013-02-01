@@ -5,6 +5,7 @@ A passive, non blocking, in memory tar inflate library. Inspired by zlib.
 C and C++ bindings available.
 
 Example:
+
     tar_stream stream;
     tar_inflateInit( &stream );
     .
