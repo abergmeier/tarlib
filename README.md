@@ -27,8 +27,8 @@ Example:
     	
     	// Header is available once enough bytes are read in
     	if( stream.header ) {
-    		printf( "Creating %s\n", stream.header.file_name );
-    		file_handle = open( stream.header.file_name, O_WRONLY );
+    		printf( "Creating %s\n", stream.header->file_name );
+    		file_handle = open( stream.header->file_name, O_WRONLY );
     	}
     	
     	if( stream.avail_out ) {
@@ -37,7 +37,7 @@ Example:
     	}
     	
     	if( result == TAR_ENTRY_END ) {
-    		printf( "Closing %s\n", stream.header.file_name );
+    		printf( "Closing %s\n", stream.header->file_name );
     		close( file_handle );
     	}
     }
