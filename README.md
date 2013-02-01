@@ -8,6 +8,7 @@ Example:
 
     tar_stream stream;
     tar_inflateInit( &stream );
+    
     .
     .
     .
@@ -45,7 +46,10 @@ Example:
     	}
     }
     
+    
     .
     .
     .
     
+    tar_inflateEnd( &stream );
+
