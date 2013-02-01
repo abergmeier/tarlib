@@ -1,0 +1,20 @@
+#ifndef _TARLIB_TARLIB_
+#define _TARLIB_TARLIB_
+
+#include <functional>
+#include <tarlib/tarlib.h>
+
+namespace tarlib {
+	class inflater {
+	public:
+		typedef std::function<bool(const tar_header& header)> header_callback_type;
+		typedef std::function<void(const std::uint8_t* begin, const std::uint8_t* end)> progress_callback_type;
+		inflater( header_callback_type header, progress_callback_type progress );
+		void put( const std::uint8_t* begin, const std::uint8_t* end );
+	private:
+		header_callback_type   _header_callback;
+		progress_callback_type _progress_callback;
+	}
+}
+
+#endif //_TARLIB_TARLIB_
