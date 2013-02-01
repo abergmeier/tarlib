@@ -22,22 +22,22 @@ Example:
     	int result = tar_inflate( &stream );
     	
     	if( result < TAR_OK ) {
-    		printf( "Error");
+    		printf( "Error" );
     	}
     	
+    	// Header is available once enough bytes are read in
     	if( stream.header ) {
-    		printf( "Creating %s", stream.header.file_name );
+    		printf( "Creating %s\n", stream.header.file_name );
     		file_handle = open( stream.header.file_name, O_WRONLY );
     	}
-    
     	
     	if( stream.avail_out ) {
-    		printf( "Writing %d", stream.avail_out );
-    		write( file_handle, _stream.next_out, stream.avail_out );
+    		printf( "Writing %d\n", stream.avail_out );
+    		write( file_handle, stream.next_out, stream.avail_out );
     	}
     	
     	if( result == TAR_ENTRY_END ) {
-    		printf( "Closing %s", stream.header.file_name );
+    		printf( "Closing %s\n", stream.header.file_name );
     		close( file_handle );
     	}
     }
