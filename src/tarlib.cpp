@@ -66,6 +66,8 @@ internal::put( tar_stream& strm ) {
 		if( strm.avail_in ) {
 			// Go to the next entry
 			_header_ptr = std::begin( _header_buffer );
+			strm.next_out  = nullptr;
+			strm.avail_out = 0;
 		} else
 			return false; //end of entry
 	}
@@ -76,9 +78,9 @@ internal::put( tar_stream& strm ) {
 		distance = std::min( distance, strm.avail_in );
 		
 		std::copy( strm.next, strm.next + distance, _header_ptr );
-		strm.next     += distance;
+		strm.next_in  += distance;
 		strm.avail_in -= distance;
-		strm.total    += distance;
+		strm.total_in += distance;
 		_header_ptr   += distance;
 		
 		if( _header_ptr == buffer_end ) {
@@ -98,8 +100,13 @@ internal::put( tar_stream& strm ) {
 
 			// Limit to current file entry only
 			strm.avail_out = std::min( strm.avail_in, _left);
+			strm.next_out  = strm.next_in;
+			strm.total_out += strm.avail_out;
+			
 			strm.avail_in -= strm.avail_out;
-			strm.total    += strm.avail_out;
+			strm.next_in  += strm.avail_out;
+			strm.total_in += strm.avail_out;
+
 			_left         -= strm.avail_out;
 		}
 		
