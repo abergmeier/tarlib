@@ -1,28 +1,55 @@
 #include <string>
 #include <array>
+#include <cstdint>
+#include <cstdlib>
+#include <cassert>
+#include <type_traits>
+#include <sstream>
+#include <iterator>
+#include <tarlib/tarlib>
 
 using namespace tarlib;
 
 inflater::inflater( header_callback_type header_callback, progress_callback_type progress ) :
-	_header_callback( header_callback ), _progress_callback( progress )
+	_tarstream(), _header_callback( header_callback ), _progress_callback( progress ), _headerInvoked( false )
 {
+	tar_inflateInit( &_tarstream );
+}
+
+inflater::~inflater() noexcept {
+	tar_inflateEnd( &_tarstream );
 }
 
 void
 inflater::put( const std::uint8_t* begin, const std::uint8_t* end ) {
-	_tarstream.next     = begin;
-	_tarstream.avail_in = std::distance( begin, end );
+	if( begin == end )
+		return;
+
+	if( begin > end )
+		std::swap( begin, end );
+
+	_tarstream.next_in  = begin;
+
+	const auto distance = std::distance( begin, end );
+	// Since we swapped before, this should NEVER happen
+	assert( distance >= 0 );
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+	_tarstream.avail_in = distance;
+#pragma GCC diagnostic pop
+
 	
 	while( _tarstream.avail_in ) {
 		int result = tar_inflate( &_tarstream );
 	
-		if( !_invoked && _tarstream.header ) {
-			_invoked = true;
+		if( !_headerInvoked && _tarstream.header ) {
+			_headerInvoked = true;
 			_header_callback( *_tarstream.header );
 		}
 	
 		if( _tarstream.avail_out ) {
-			_process( _tarstream.next, _tarstream.next + _tarstream.avail_out );
+			_progress_callback( _tarstream.next_out, _tarstream.next_out + _tarstream.avail_out );
 		}
 	}
 	
@@ -30,42 +57,80 @@ inflater::put( const std::uint8_t* begin, const std::uint8_t* end ) {
 }
 
 namespace {
+
+	template <unsigned int OFFSET, unsigned int COUNT>
+	unsigned long long _base256_to_10( typename std::enable_if<COUNT == 0, const Byte*>::type ptr) {
+		return ptr[OFFSET];
+	}
+
+	template <unsigned int OFFSET, unsigned int COUNT>
+	unsigned long long _base256_to_10( typename std::enable_if<COUNT != 0, const Byte*>::type ptr) {
+		return (ptr[OFFSET] * 256 * COUNT) + _base256_to_10<OFFSET + 1, COUNT - 1>( ptr );
+	}
+
+	template <unsigned int OFFSET, unsigned int COUNT>
+	unsigned long long base256_to_10( const Byte* ptr) {
+		//return _base256_to_10<OFFSET, COUNT - 1>( ptr );
+		return std::strtoull( reinterpret_cast<const char*>(ptr), nullptr, 256 );
+	}
+
+	unsigned long base8_to_10( const Byte* ptr ) {
+		return std::strtoul( reinterpret_cast<const char*>(ptr), nullptr, 8 );
+	}
+
 	// Converts octal to usable decimal values
 	void convert( const tar_header& header, tar_stream& strm ) {
-		std::stringstream stream( std::begin(header.file_size.octal_bytes), std::end(header.file_size.octal_bytes) );
-		stream >> std::oct >> strm.file_bytes;
+		const bool is_base_256 = *header.file_bytes_octal & 0xFF;
+		
+		std::uint64_t value;
+		
+		if( is_base_256 ) {
+			const auto& field = header.file_bytes_octal;
+			value = base256_to_10<1, 10>( field );
+		} else {
+			std::ostringstream stream;
+			value = base8_to_10( std::begin(header.file_bytes_octal) );
+		}
+		strm.file_bytes = value;
 	
-		stream.str( header.modifiction_time.octal_unix );
-		stream >> std::oct >> strm.modification_time;
+		strm.modification_time = base8_to_10( header.modification_time_octal );
 	}
 	
 	// Internal tar state
 	struct internal {
 		internal();
-		put( tar_stream& strm );
+		bool put( tar_stream& strm );
 	private:
 		tar_header    _header_buffer;
 		Byte*         _header_ptr;
 		std::uint64_t _left;
 	};
 	
-	internal& inflater( tar_stream& strm ) {
+	internal& intern( tar_stream& strm ) {
 		return *static_cast<internal*>( strm.internal );
+	}
+
+	Byte* begin( tar_header& header ) {
+		return reinterpret_cast<Byte*>( &header );
+	}
+
+	Byte* end( tar_header& header ) {
+		return begin(header) + sizeof(header);
 	}
 }
 
 internal::internal() :
-	_header_buffer(), _header_ptr( &_header_buffer ), _left( 0 )
+	_header_buffer(), _header_ptr( reinterpret_cast<Byte*>(&_header_buffer) ), _left( 0 )
 {
 }
 
 bool
 internal::put( tar_stream& strm ) {
-	const auto buffer_end = std::end(_header_buffer);
+	const auto buffer_end = end(_header_buffer );
 	if( _header_ptr == buffer_end && !_left ) {
 		if( strm.avail_in ) {
 			// Go to the next entry
-			_header_ptr = std::begin( _header_buffer );
+			_header_ptr = begin( _header_buffer );
 			strm.next_out  = nullptr;
 			strm.avail_out = 0;
 		} else
@@ -74,10 +139,11 @@ internal::put( tar_stream& strm ) {
 
 	if( _header_ptr != buffer_end ) {
 		// Try to make the header full
-		auto distance = std::distance( _header_ptr, buffer_end );
-		distance = std::min( distance, strm.avail_in );
+		const auto header_distance = std::distance( _header_ptr, buffer_end );
+		assert( header_distance >= 0 );
+		const auto distance = std::min( static_cast<decltype(strm.avail_in)>(header_distance), strm.avail_in );
 		
-		std::copy( strm.next, strm.next + distance, _header_ptr );
+		std::copy( strm.next_in, strm.next_in + distance, _header_ptr );
 		strm.next_in  += distance;
 		strm.avail_in -= distance;
 		strm.total_in += distance;
@@ -85,7 +151,7 @@ internal::put( tar_stream& strm ) {
 		
 		if( _header_ptr == buffer_end ) {
 			// We reached a full header
-			const tar_header& header = *reinterpret_cast<tar_header*>( std::begin(_header_buffer) );
+			const tar_header& header = *reinterpret_cast<tar_header*>( begin(_header_buffer) );
 			convert( header, strm );
 			strm.header = &header;
 			_left = strm.file_bytes;
@@ -99,7 +165,7 @@ internal::put( tar_stream& strm ) {
 			// There is actual data here
 
 			// Limit to current file entry only
-			strm.avail_out = std::min( strm.avail_in, _left);
+			strm.avail_out = std::min( strm.avail_in, static_cast<decltype(strm.avail_in)>(_left) );
 			strm.next_out  = strm.next_in;
 			strm.total_out += strm.avail_out;
 			
@@ -120,32 +186,36 @@ internal::put( tar_stream& strm ) {
 
 // C wrapper
 int TAREXPORT
-tar_extractInit( tar_streamp strm ) {
-	assert( strm )
-	strm->next              = nullptr;
+tar_inflateInit( tar_streamp strm ) {
+	assert( strm );
+	strm->next_in           = nullptr;
 	strm->avail_in          = 0;
+	strm->next_out          = nullptr;
 	strm->avail_out         = 0;
-	strm->internal = new tarlib::inflater();
+	strm->internal          = new internal();
 	strm->header            = nullptr;
 	strm->file_bytes        = 0;
 	strm->modification_time = 0;
+	return TAR_OK;
 }
 
 int TAREXPORT
-tar_extract( tar_streamp strm ) {
-	assert( strm )
-	if( inflater(strm).put( strm ) )
+tar_inflate( tar_streamp strm ) {
+	assert( strm );
+	if( intern(*strm).put( *strm ) )
+		return TAR_OK;
 	else
-		return Z_ENTRY_END;
+		return TAR_ENTRY_END;
 }
 
 int TAREXPORT
-tar_extractEnd( tar_streamp strm ) {
-	assert( strm )
-	delete strm->internal;
+tar_inflateEnd( tar_streamp strm ) {
+	assert( strm );
+	delete &intern( *strm );
 	// Signal to externals that the stream
 	// has ended
 	strm->internal = nullptr;
+	return TAR_OK;
 }
 
 

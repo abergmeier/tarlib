@@ -10,6 +10,14 @@
 #define TARLIB_VER_REVISION 0
 #define TARLIB_VER_SUBREVISION 0
 
+#ifndef TAREXPORT
+#  define TAREXPORT
+#endif
+
+#ifndef TAREXTERN
+#  define TAREXTERN extern
+#endif
+
 #define TAR_HEADER_SIZE 512
 
 // This library does not handle FAR pointers by default. If needed have to convert.
@@ -28,15 +36,30 @@ typedef unsigned long uLong; // See zlib configuration
 #define TAR_BUF_ERROR     (-5)
 #define TAR_VERSION_ERROR (-6)
 
+enum tar_file {
+	TAR_NORMAL = '0',
+	TAR_HARD_LINK   = '1',
+	TAR_SYM_LINK    = '2',
+	// new values only for type flag
+	TAR_CHAR_SPEC   = '3',
+	TAR_BLOCK_SPEC  = '4',
+	TAR_DIR         = '5',
+	TAR_FIFO        = '6',
+	TAR_CONT_FILE   = '7',
+	TAR_G_EX_HEADER = 'g', // global extended header with meta data (POSIX.1-2001)
+	TAR_EX_HEADER   = 'x'  // extended header with meta data for the next file in the archive (POSIX.1-2001)
+};
+
 struct tar_header {
-	Byte file_name[100]
+	Byte file_name[100];
 	uint64_t mode;
 	struct {
 		uint64_t user;
 		uint64_t group;
 	} owner_ids;
 
-	Byte file_bytes_octal[12]; //octal
+	Byte file_bytes_octal[11]; //octal
+	Byte file_bytes_terminator; // null
 	Byte modification_time_octal[12]; //octal
 
 	uint64_t header_checksum;
