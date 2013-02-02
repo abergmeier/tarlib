@@ -14,3 +14,9 @@
 
 # Unix backup files
 *~
+
+# Eclipse files
+Release
+Debug
+.cproject
+
