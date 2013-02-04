@@ -32,7 +32,8 @@ namespace {
 
 	// Converts octal to usable decimal values
 	void convert( const tar_header& header, tar_stream& strm ) {
-		const bool is_base_256 = *header.file_bytes_octal & 0xFF;
+
+		const bool is_base_256 = header.file_bytes_octal[0] & 0x80;
 		
 		std::uint64_t value;
 		
