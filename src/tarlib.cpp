@@ -6,55 +6,7 @@
 #include <type_traits>
 #include <sstream>
 #include <iterator>
-#include <tarlib/tarlib>
-
-using namespace tarlib;
-
-inflater::inflater( header_callback_type header_callback, progress_callback_type progress ) :
-	_tarstream(), _header_callback( header_callback ), _progress_callback( progress ), _headerInvoked( false )
-{
-	tar_inflateInit( &_tarstream );
-}
-
-inflater::~inflater() noexcept {
-	tar_inflateEnd( &_tarstream );
-}
-
-void
-inflater::put( const std::uint8_t* begin, const std::uint8_t* end ) {
-	if( begin == end )
-		return;
-
-	if( begin > end )
-		std::swap( begin, end );
-
-	_tarstream.next_in  = begin;
-
-	const auto distance = std::distance( begin, end );
-	// Since we swapped before, this should NEVER happen
-	assert( distance >= 0 );
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-	_tarstream.avail_in = distance;
-#pragma GCC diagnostic pop
-
-	
-	while( _tarstream.avail_in ) {
-		int result = tar_inflate( &_tarstream );
-	
-		if( !_headerInvoked && _tarstream.header ) {
-			_headerInvoked = true;
-			_header_callback( *_tarstream.header );
-		}
-	
-		if( _tarstream.avail_out ) {
-			_progress_callback( _tarstream.next_out, _tarstream.next_out + _tarstream.avail_out );
-		}
-	}
-	
-	// All data was processed
-}
+#include <tarlib/tarlib.h>
 
 namespace {
 
