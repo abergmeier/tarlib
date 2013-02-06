@@ -6,8 +6,9 @@
  */
 
 #include <tarlib/inflater>
-
-void main() {
-	tarlib::inflater inflater;
+#if 0
+int main() {
+	//tarlib::inflater inflater;
+	return 0;
 }
-
+#endif

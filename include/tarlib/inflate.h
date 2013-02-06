@@ -29,13 +29,17 @@ TAREXTERN int TAREXPORT tar_inflateInit(tar_streamp strm);
  * You should at least provide  avail_in  >= 512 bytes, since then the file entry header can be copied
  * in one go.
  */
-TAREXTERN int TAREXPORT tar_inflate    (tar_streamp strm);
+TAREXTERN int TAREXPORT tar_inflate    (tar_streamp strm, int flush);
 
 /*
  * Cleans up tar_stream
  */
 TAREXTERN int TAREXPORT tar_inflateEnd (tar_streamp strm);
 
+TAREXTERN int TAREXPORT tar_inflateGetHeader (tar_streamp strm,
+                                              tar_headerp head );
+
+TAREXTERN int TAREXPORT tar_inflateReset (tar_streamp strm);
 
 
 #endif //_TARLIB_INFLATE_H_

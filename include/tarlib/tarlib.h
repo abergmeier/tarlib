@@ -26,6 +26,10 @@ typedef uint8_t Byte;
 typedef unsigned int uInt; // See zlib configuration
 typedef unsigned long uLong; // See zlib configuration
 
+#define TAR_SYNC_FLUSH    2
+#define TAR_BLOCK         5
+// Allowed flush values
+
 #define TAR_OK              0
 #define TAR_STREAM_END      1
 #define TAR_ENTRY_END       2
@@ -50,64 +54,66 @@ enum tar_file {
 	TAR_EX_HEADER   = 'x'  // extended header with meta data for the next file in the archive (POSIX.1-2001)
 };
 
-struct tar_header {
-	Byte file_name[100];
-	uint64_t mode;
-	struct {
-		uint64_t user;
-		uint64_t group;
-	} owner_ids;
-
-	Byte file_bytes_octal[11]; //octal
-	Byte file_bytes_terminator; // null
-	Byte modification_time_octal[12]; //octal
-
-	uint64_t header_checksum;
-
-	union {
-		struct {
-			Byte link_indicator; //file type
-			Byte linked_file_name[100];
-			Byte padding[TAR_HEADER_SIZE - 257];
-		} legacy;
-		struct {
-			Byte type_flag;
-			Byte linked_file_name[100];
-			Byte indicator[6]; //"ustar"
-			Byte version[2]; // "00"
-			struct {
-				Byte user[32];
-				Byte group[32];
-			} owner_names;
-			struct {
-				uint64_t major;
-				uint64_t minor;
-			} device;
-			Byte filename_prefix[155];
-			Byte padding[TAR_HEADER_SIZE - 500];
-		} ustar;
-	} extension;
-};
-
 typedef struct tar_stream_s {
 	const Byte* next_in;  // next input byte(s)
-	uInt        avail_in; // number of input bytes available at next
+	uInt        avail_in; // number of input bytes available at next_in
 	uLong       total_in; // total number of bytes read so far
 
-	const Byte* next_out;  // next output byte(s)
-	uInt        avail_out; // number of output bytes available at next
+	const Byte* ptr_out;  // output byte(s)
+	uInt        len_out;  // number of output bytes available at ptr_out
 	uLong       total_out; // total number of bytes written so far
 
 #if 0
     z_const char *msg;  // last error message, NULL if no error
 #endif
-	const tar_header* header;
-	uint64_t file_bytes;
-	uint64_t modification_time;
 	void* internal; // internal state
 } tar_stream;
 
 typedef tar_stream* tar_streamp;
+
+// Header is ASCII encoded!
+typedef struct tar_header_s {
+	char file_name[100];
+	char mode[8];
+	struct {
+		char user[8];
+		char group[8];
+	} owner_ids;
+
+	char file_bytes_octal[11]; //octal
+	char file_bytes_terminator; // null
+	char modification_time_octal[12]; //octal
+
+	char header_checksum[8];
+
+	union {
+		struct {
+			char link_indicator; //file type
+			char linked_file_name[100];
+		} legacy;
+		struct {
+			char type_flag;
+			char linked_file_name[100];
+			char indicator[6]; //"ustar"
+			char version[2];  // "00"
+			struct {
+				char user[32];
+				char group[32];
+			} owner_names;
+			struct {
+				char major[8];
+				char minor[8];
+			} device;
+			char filename_prefix[155];
+		} ustar;
+	} extension;
+	char padding[TAR_HEADER_SIZE - 500];
+	int8_t done;
+	uint64_t file_bytes;
+	uint64_t modification_time;
+} tar_header;
+
+typedef tar_header* tar_headerp;
 
 #include <tarlib/inflate.h>
 

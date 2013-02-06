@@ -3,13 +3,14 @@
 
 #include <functional>
 #include <cassert>
+#include <iterator>
 #include <tarlib/tarlib.h>
 
 namespace std {
 	class invoker {
 	public:
-		virtual void operator( ARGS... args ) {
-			std::bind( args... )();
+		template <typename... Arguments>
+		void operator()( Arguments... args ) {
 		}
 	};
 #if 0
@@ -18,7 +19,7 @@ namespace std {
 		typedef std::function<void()> void_functor;
 		
 		template <typename... ARGS>
-		void operator()( ARGS... args) override {
+		void operator()( ARGS... args ) {
 			
 		}
 	private:
@@ -33,13 +34,14 @@ namespace tarlib {
 	class inflater {
 	public:
 		typedef std::function<bool(const tar_header& header)> header_callback_type;
-		typedef std::function<void(const std::uint8_t* begin, const std::uint8_t* end)> progress_callback_type;
+		typedef std::function<void(const char* begin, const char* end)> progress_callback_type;
 		inflater( header_callback_type header, progress_callback_type progress, Invoker& invoker = Invoker() );
 		~inflater() noexcept;
 		void operator()( const char* begin, const char* end );
 	private:
-		void put()( const char* begin, const char* end );
+		void put( const char* begin, const char* end );
 		tar_stream _tarstream;
+		tar_header _tarheader;
 		header_callback_type   _header_callback;
 		progress_callback_type _progress_callback;
 		bool _headerInvoked;
@@ -48,10 +50,11 @@ namespace tarlib {
 }
 
 template <typename Invoker>
-tarlib::inflater<Invoker>::inflater( header_callback_type header_callback, progress_callback_type progress, Invoker& invoker = Invoker() ) :
-	_tarstream(), _header_callback( header_callback ), _progress_callback( progress ), _headerInvoked( false ), _invoker( invoker )
+tarlib::inflater<Invoker>::inflater( header_callback_type header_callback, progress_callback_type progress, Invoker& invoker ) :
+	_tarstream(), _tarheader(), _header_callback( header_callback ), _progress_callback( progress ), _headerInvoked( false ), _invoker( invoker )
 {
 	auto result = tar_inflateInit( &_tarstream );
+	result = tar_inflateGetHeader( &_tarstream, &_tarheader );
 }
 
 template <typename Invoker>
@@ -90,15 +93,15 @@ tarlib::inflater<Invoker>::put( const char* begin, const char* end ) {
 #pragma GCC diagnostic pop
 	
 	while( _tarstream.avail_in ) {
-		auto result = tar_inflate( &_tarstream );
+		auto result = tar_inflate( &_tarstream, TAR_SYNC_FLUSH );
 	
-		if( !_headerInvoked && _tarstream.header ) {
+		if( !_headerInvoked && _tarheader.done ) {
 			_headerInvoked = true;
-			_header_callback( *_tarstream.header );
+			_header_callback( _tarheader );
 		}
 	
-		if( _tarstream.avail_out ) {
-			_progress_callback( _tarstream.next_out, _tarstream.next_out + _tarstream.avail_out );
+		if( _tarstream.len_out ) {
+			_progress_callback( _tarstream.ptr_out, _tarstream.ptr_out + _tarstream.len_out );
 		}
 	}
 	
