@@ -1,8 +1,8 @@
 tarlib
 ======
+( near neighbor of [zlib](http://www.zlib.net/), [libbzip2](http://www.bzip.org/) and [ziplib](https://github.com/abergmeier/ziplib) )
 
-A passive, non blocking, in memory tar inflate library. Inspired by zlib.
-C and C++ bindings available.
+A passive, non blocking, in memory tar inflate library. Inspired by [zlib](http://www.zlib.net/). Big brother to [ziplib](https://github.com/abergmeier/ziplib).
 
 Example:
 
