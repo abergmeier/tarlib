@@ -82,7 +82,7 @@ namespace {
 	};
 	
 	internal& intern( tar_stream& strm ) {
-		return *static_cast<internal*>( strm.internal );
+		return *static_cast<internal*>( strm.state );
 	}
 
 	Byte* begin( tar_header& header ) {
@@ -206,13 +206,12 @@ internal::put( tar_stream& strm, bool continueAfterHeader ) {
 int TAREXPORT
 tar_inflateInit( tar_streamp strm ) {
 	assert( strm );
-	strm->next_in           = nullptr;
-	strm->avail_in          = 0;
-	strm->total_in          = 0;
-	strm->ptr_out           = nullptr;
-	strm->len_out           = 0;
-	strm->total_out         = 0;
-	strm->internal          = new internal();
+
+	strm->total_in  = 0;
+	strm->ptr_out   = nullptr;
+	strm->len_out   = 0;
+	strm->total_out = 0;
+	strm->state     = new internal();
 	return TAR_OK;
 }
 

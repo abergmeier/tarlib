@@ -66,7 +66,7 @@ typedef struct tar_stream_s {
 #if 0
     z_const char *msg;  // last error message, NULL if no error
 #endif
-	void* internal; // internal state
+	void*         state; // internal state
 } tar_stream;
 
 typedef tar_stream* tar_streamp;
