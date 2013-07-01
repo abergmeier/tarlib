@@ -230,7 +230,7 @@ tar_inflateEnd( tar_streamp strm ) {
 	delete &intern( *strm );
 	// Signal to externals that the stream
 	// has ended
-	strm->internal = nullptr;
+	strm->state = nullptr;
 	return TAR_OK;
 }
 
