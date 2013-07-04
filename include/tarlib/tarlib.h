@@ -26,8 +26,8 @@ typedef uint8_t Byte;
 typedef unsigned int uInt; // See zlib configuration
 typedef unsigned long uLong; // See zlib configuration
 
-#define TAR_SYNC_FLUSH    2
 #define TAR_BLOCK         5
+#define TAR_HEADER_FLUSH 7
 // Allowed flush values
 
 #define TAR_OK              0

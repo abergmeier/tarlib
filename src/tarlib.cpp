@@ -222,7 +222,8 @@ tar_inflateInit( tar_streamp strm ) {
 int TAREXPORT
 tar_inflate( tar_streamp strm, int flush ) {
 	assert( strm );
-	if( intern(*strm).put( *strm, flush == TAR_SYNC_FLUSH ) )
+
+	if( intern(*strm).put( *strm, flush != TAR_HEADER_FLUSH ) )
 		return TAR_OK;
 	else
 		return TAR_ENTRY_END;
