@@ -115,6 +115,9 @@ typedef struct tar_header_s {
 
 typedef tar_header* tar_headerp;
 
+
+#define TAR_NELEMENTS(x) sizeof(x) / sizeof(*x)
+
 #include <tarlib/inflate.h>
 
 #endif // _TARLIB_TARLIB_H_

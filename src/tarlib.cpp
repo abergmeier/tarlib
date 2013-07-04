@@ -33,6 +33,9 @@ namespace {
 	// Converts octal to usable decimal values
 	void convert( tar_header& header ) {
 
+		// Make sure file name is properly \0 terminated
+		header.file_name[TAR_NELEMENTS(header.file_name) - 1] = '\0';
+
 		const bool is_base_256 = header.file_bytes_octal[0] & 0x80;
 		
 		std::uint64_t value;
@@ -145,6 +148,7 @@ internal::put( tar_stream& strm, bool continueAfterHeader ) {
 		
 		if( !_header.left ) {
 			// We reached a full header
+
 			if( _header.ptr_begin ) {
 				tar_header& header = *_header.ptr_begin;
 				convert( header );
