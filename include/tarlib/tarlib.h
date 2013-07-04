@@ -120,6 +120,8 @@ typedef tar_header* tar_headerp;
 
 TAREXTERN int TAREXPORT tar_headerIsDir( tar_headerp header );
 
+TAREXTERN int TAREXPORT tar_headerIsEmpty( tar_headerp header );
+
 #define TAR_NELEMENTS(x) sizeof(x) / sizeof(*x)
 
 #include <tarlib/inflate.h>

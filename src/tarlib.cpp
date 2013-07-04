@@ -1,5 +1,6 @@
 #include <string>
 #include <array>
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <cassert>
@@ -275,6 +276,21 @@ tar_headerIsDir( tar_headerp header ) {
 
 	// Check indicating via terminating slash
 	return header->file_name[len - 1] == '/' ? TAR_TRUE : TAR_FALSE;
+}
+
+int TAREXPORT
+tar_headerIsEmpty( tar_headerp header ) {
+	assert( header );
+	
+	if( !header->done )
+		return -1;
+
+	return std::all_of( reinterpret_cast<const char*>(header),
+	                    reinterpret_cast<const char*>(header) + TAR_HEADER_SIZE,
+	                    []( const char& character ) {
+	                    	return character == 0;
+	                    } );
+	
 }
 
 
