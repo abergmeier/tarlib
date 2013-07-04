@@ -8,3 +8,6 @@ add_library( tarlib src/tarlib.cpp )
 include_directories( ${tarlib_SOURCE_DIR}/include )
 list( APPEND CMAKE_CXX_FLAGS -std=c++11 )
 
+add_executable( untar test/test.cpp )
+target_link_libraries( untar tarlib )
+
