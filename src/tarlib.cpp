@@ -251,7 +251,7 @@ tar_inflateGetHeader( tar_streamp strm,
 }
 
 int TAREXPORT
-tar_inflateReset ( tar_streamp strm ) {
+tar_inflateReset( tar_streamp strm ) {
 	assert(strm);
 	auto& internal = intern( *strm );
 	internal.header( nullptr );
