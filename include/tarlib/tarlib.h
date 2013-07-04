@@ -31,7 +31,7 @@ typedef unsigned long uLong; // See zlib configuration
 // Allowed flush values
 
 #define TAR_OK              0
-#define TAR_STREAM_END      1
+//#define TAR_STREAM_END      1
 #define TAR_ENTRY_END       2
 #define TAR_ERRNO         (-1)
 #define TAR_STREAM_ERROR  (-2)
