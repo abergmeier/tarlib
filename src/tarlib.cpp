@@ -256,5 +256,25 @@ tar_inflateReset ( tar_streamp strm ) {
 	return TAR_OK;
 }
 
+int TAREXPORT
+tar_headerIsDir( tar_headerp header ) {
+	assert( header );
+
+	if( !header->done )
+		return -1;
+
+	if( header->extension.ustar.type_flag == TAR_DIR )
+		return TAR_TRUE;
+
+	// support pre-POSIX.1-1988
+	auto len = strlen( header->file_name );
+
+	if( len == 0 )
+		return TAR_FALSE;
+
+	// Check indicating via terminating slash
+	return header->file_name[len - 1] == '/' ? TAR_TRUE : TAR_FALSE;
+}
+
 
 

@@ -40,6 +40,9 @@ typedef unsigned long uLong; // See zlib configuration
 #define TAR_BUF_ERROR     (-5)
 #define TAR_VERSION_ERROR (-6)
 
+#define TAR_TRUE 1
+#define TAR_FALSE 0
+
 enum tar_file {
 	TAR_NORMAL = '0',
 	TAR_HARD_LINK   = '1',
@@ -115,6 +118,7 @@ typedef struct tar_header_s {
 
 typedef tar_header* tar_headerp;
 
+TAREXTERN int TAREXPORT tar_headerIsDir( tar_headerp header );
 
 #define TAR_NELEMENTS(x) sizeof(x) / sizeof(*x)
 
