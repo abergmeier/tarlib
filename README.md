@@ -4,52 +4,37 @@ tarlib
 
 A passive, non blocking, in memory tar inflate library. Inspired by [zlib](http://www.zlib.net/). Big brother to [ziplib](https://github.com/abergmeier/ziplib).
 
-Example:
+Building:
+---------
+Contained in the project is a CMake project for building the library as well as a test program.
+I would recommend ninja for building.
+Following my command line:
 
-    tar_stream stream;
-    tar_inflateInit( &stream );
-    
-    .
-    .
-    .
-    
-    void one_chunk( char* data, unsigned int data_size ) {
-    	stream.next_in  = data;
-    	stream.avail_in = data_size;
-    
-    	int file_handle;
-    
-    	// Check avail_in because  tar_inflate  might not process all.
-    	// It just processes all data for the current file entry.
-    	while( stream.avail_in ) {
-    		int result = tar_inflate( &stream );
-    		
-    		if( result < TAR_OK ) {
-    		printf( "Error" );
-    		}
-    		
-    		// Header is available once enough bytes are read in
-    		if( stream.header ) {
-    			printf( "Creating %s\n", stream.header->file_name );
-    			file_handle = open( stream.header->file_name, O_WRONLY );
-    		}
-    		
-    		if( stream.avail_out ) {
-    			printf( "Writing %d\n", stream.avail_out );
-    			write( file_handle, stream.next_out, stream.avail_out );
-    		}
-    		
-    		if( result == TAR_ENTRY_END ) {
-    			printf( "Closing %s\n", stream.header->file_name );
-    			close( file_handle );
-    		}
-    	}
-    }
-    
-    
-    .
-    .
-    .
-    
-    tar_inflateEnd( &stream );
+    mkdir build
+    cd build
+    cmake –GNinja ..
+    ninja
 
+Usage:
+------
+_tarlib_ works very similar to [zlib](http://www.zlib.net/).
+This means it is your duty to put data into a `tar_stream` and invoke `tar_inflate` until all input data was processed.
+As a direct result you can use _tarlib_ for streaming and do not need a file.
+
+
+For usage see _test/test.cpp_.
+
+Limitations:
+------------
+Since I currently have no need to create tars, _tarlib_ only extracts tars.
+Also you will need a C++ compiler to compile and a C++ stdlib for running tarlib.
+The C interface is mainly to enable usage from C and to resemble [zlib](http://www.zlib.net/).
+
+License:
+--------
+Apache License (see _LICENSE_ file)
+
+Plan:
+-----
+Currently _tarlib_ is for testing the interface and see what needs to be ironed out.
+If anyone wants to extend _tarlib_, pull requests are very welcome.
