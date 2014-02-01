@@ -28,7 +28,7 @@ Limitations:
 ------------
 Since I currently have no need to create tars, _tarlib_ only extracts tars.
 Also you will need a C++ compiler to compile and a C++ stdlib for running tarlib.
-The C interface is mainly to enable usage from C and to resemble [zlib](http://www.zlib.net/).
+The C-style interface is mainly to resemble [zlib](http://www.zlib.net/).
 
 License:
 --------
