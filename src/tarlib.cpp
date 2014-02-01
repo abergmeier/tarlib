@@ -192,16 +192,16 @@ internal::put( tar_stream& strm, bool continueAfterHeader ) {
 
 				return strm.len_out;
 			} else {
-				uInt leftPadding = static_cast<decltype(_endPadding)>( _left );
+				uInt movePadding = static_cast<decltype(_endPadding)>( _left );
 
-				if ( leftPadding > strm.avail_in )
-					leftPadding = strm.avail_in;
+				if ( movePadding > strm.avail_in )
+					movePadding = strm.avail_in;
 
 				// Consume the padding but do not generate output
 				strm.len_out    = 0;
-				strm.total_out += leftPadding;
+				strm.total_out += movePadding;
 
-				return leftPadding;
+				return movePadding;
 			}
 		}();
 
