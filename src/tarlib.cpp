@@ -155,18 +155,22 @@ internal::put( tar_stream& strm, bool continueAfterHeader ) {
 				convert( header );
 				_header.ptr_begin->done = 1;
 			}
-			//FIXME: Make working without internal header
-			_left       = _header.ptr_begin->file_bytes;
-			_endPadding = [&]() {
-				// Data is always rounded up to 512
-				static const std::uint16_t PADDING_SIZE = 512;
-				auto quot = _left / PADDING_SIZE;
-				if( _left % PADDING_SIZE ) {
-					++quot;
-				}
-				return static_cast<uint16_t>( quot * PADDING_SIZE - _left );
-			}();
-			_left += _endPadding;
+			
+			{
+				//FIXME: Make working without internal header
+				const auto file_bytes = _header.ptr_begin->file_bytes;
+				_endPadding = [&]() {
+					// Data is always rounded up to 512
+					static const std::uint16_t PADDING_SIZE = 512;
+					auto quot = file_bytes / PADDING_SIZE;
+					if( _left % PADDING_SIZE ) {
+						++quot;
+					}
+					return static_cast<uint16_t>( quot * PADDING_SIZE - _left );
+				}();
+				// How much bytes are left to read
+				_left = file_bytes + _endPadding;
+			}
 
 			if( !continueAfterHeader )
 				return true;
